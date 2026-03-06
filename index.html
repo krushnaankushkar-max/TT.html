@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICEM Smart Timetable - Krushna</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Poppins:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            --dark-bg: #0f172a;
+            --card-bg: #ffffff;
+            --accent-gold: #fbbf24;
+            --active-day-bg: rgba(59, 130, 246, 0.08);
+            --d1-bg: #ffe4e6; --d1-text: #e11d48;
+            --d2-bg: #dcfce7; --d2-text: #15803d;
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background-color: #f0f4f8;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(30, 58, 138, 0.1) 0%, transparent 40%);
+            min-height: 100vh;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        /* WELCOME OVERLAY */
+        #welcome-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--dark-bg);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 9999; color: white; 
+            animation: fadeOutOverlay 1s forwards 2.5s;
+        }
+        .user-name { font-family: 'Poppins', sans-serif; font-size: 3.5rem; background: linear-gradient(to right, #fff, var(--accent-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0; transform: translateY(20px); animation: fadeInMove 0.8s ease-out forwards 0.5s; }
+        .welcome-msg { font-size: 1.5rem; color: rgba(255,255,255,0.7); opacity: 0; animation: fadeIn 1s ease-out forwards 1s; letter-spacing: 1px; }
+        
+        @keyframes fadeInMove { to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes fadeOutOverlay { to { opacity: 0; visibility: hidden; } }
+
+        /* NAVBAR */
+        .navbar { background: rgba(255,255,255,0.95) !important; backdrop-filter: blur(10px); border-bottom: 2px solid #cbd5e1; padding: 12px 0; }
+        .navbar-brand { font-weight: 800; font-size: 1.8rem; color: #1e3a8a !important; text-decoration: none; }
+        
+        /* MyEdu Button Style */
+        .myedu-btn {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 2px solid #0369a1;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+        .myedu-btn:hover {
+            background: #0369a1;
+            color: white;
+        }
+
+        .live-info-container { display: flex; gap: 12px; align-items: center; }
+        #live-date { background: #e2e8f0; color: #1e3a8a; padding: 8px 16px; border-radius: 50px; font-weight: 700; font-size: 0.85rem; }
+        #live-clock { font-weight: 700; background: var(--primary-gradient); color: white; padding: 9px 22px; border-radius: 50px; box-shadow: 0 8px 15px rgba(30, 58, 138, 0.2); }
+
+        /* MAIN CARD */
+        .main-card {
+            background: var(--card-bg);
+            border-radius: 25px; padding: 25px; border: 1px solid #cbd5e1;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* TABLE STYLING */
+        .table thead th { background: #1e3a8a; color: white; font-weight: 600; padding: 15px; border: none; text-transform: uppercase; font-size: 0.8rem; }
+        .table thead th:first-child { border-radius: 12px 0 0 0; }
+        .table thead th:last-child { border-radius: 0 12px 0 0; }
+
+        .time-slot { background: #f1f5f9 !important; color: #1e3a8a; font-weight: 800; font-size: 0.75rem; width: 110px; border-right: 1px solid #cbd5e1 !important; }
+
+        .active-day-column {
+            background-color: var(--active-day-bg) !important;
+            border-left: 1px solid rgba(59, 130, 246, 0.2);
+            border-right: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .batch-group { display: flex; flex-direction: column; gap: 4px; justify-content: center; align-items: center; height: 100%; }
+        .batch-chip { width: 100px; padding: 5px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-align: center; }
+        .chip-d1 { background: var(--d1-bg); color: var(--d1-text); }
+        .chip-d2 { background: var(--d2-bg); color: var(--d2-text); }
+
+        .live-lecture {
+            background: var(--primary-gradient) !important;
+            color: white !important;
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+            transform: scale(1.03);
+            border-radius: 10px !important;
+            z-index: 10;
+            position: relative;
+        }
+        .live-lecture .instructor-tag { color: rgba(255,255,255,0.85) !important; }
+
+        .instructor-tag { font-size: 0.65rem; color: #64748b; font-weight: 500; display: block; margin-top: 3px; }
+        .break-badge { background: #cbd5e1; color: #334155; padding: 4px 15px; border-radius: 50px; font-weight: 800; font-size: 0.6rem; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+    <div id="welcome-overlay">
+        <h1 class="user-name">Welcome Krushna</h1>
+        <p class="welcome-msg">Welcome to your day!</p>
+    </div>
+
+    <nav class="navbar sticky-top">
+        <div class="container-fluid px-lg-5">
+            <div class="d-flex align-items-center">
+                <a href="#" class="navbar-brand me-3">
+                    <i class="fas fa-university me-2"></i>ICEM<span style="color: #3b82f6;">PRO</span>
+                </a>
+                
+                <a href="https://myindira.edupluscampus.com/" target="_blank" class="btn myedu-btn btn-sm rounded-pill px-3">
+                    <i class="fas fa-user-graduate me-1"></i> MyEdu
+                </a>
+            </div>
+
+            <div class="live-info-container">
+                <div id="live-date" class="d-none d-sm-block">Date</div>
+                <div id="live-clock"><span id="clock-text">00:00:00</span></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-lg-5 mb-5">
+        <div class="main-card">
+            <div class="table-responsive">
+                <table class="table text-center align-middle">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th data-day="1">MON</th>
+                            <th data-day="2">TUE</th>
+                            <th data-day="3">WED</th>
+                            <th data-day="4">THU</th>
+                            <th data-day="5">FRI</th>
+                            <th data-day="6">SAT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr data-start="09:30" data-end="10:25">
+                            <td class="time-slot">09:30 - 10:25</td>
+                            <td data-day="1"><div><b>BEE (PU)</b></div><span class="instructor-tag">A207</span></td>
+                            <td data-day="2">
+                                <div class="batch-group">
+                                    <div class="batch-chip chip-d1">D1 SPORTS</div>
+                                    <div class="batch-chip chip-d2">D2 TCE (PU)</div>
+                                </div>
+                            </td>
+                            <td data-day="3"><div><b>PHY (AB)</b></div><span class="instructor-tag">A204</span></td>
+                            <td data-day="4"><div><b>M-II (SC)</b></div><span class="instructor-tag">A206</span></td>
+                            <td data-day="5"><div><b>PHY (AB)</b></div><span class="instructor-tag">A206</span></td>
+                            <td data-day="6" rowspan="2" class="bg-light fw-bold">VAP</td>
+                        </tr>
+
+                        <tr data-start="10:25" data-end="11:20">
+                            <td class="time-slot">10:25 - 11:20</td>
+                            <td data-day="1"><div><b>PHY (AB)</b></div><span class="instructor-tag">A207</span></td>
+                            <td data-day="2"></td>
+                            <td data-day="3"><div><b>BEE (PU)</b></div><span class="instructor-tag">A204</span></td>
+                            <td data-day="4"><div><b>BCEM (KD)</b></div><span class="instructor-tag">A206</span></td>
+                            <td data-day="5"><div><b>M-II (SC)</b></div><span class="instructor-tag">A206</span></td>
+                        </tr>
+
+                        <tr><td colspan="7"><span class="break-badge">SHORT BREAK</span></td></tr>
+
+                        <tr data-start="11:30" data-end="12:25">
+                            <td class="time-slot">11:30 - 12:25</td>
+                            <td data-day="1"><div><b>M-II (SC)</b></div><span class="instructor-tag">A207</span></td>
+                            <td data-day="2"><div><b>Python (YK)</b></div><span class="instructor-tag">A206</span></td>
+                            <td data-day="3">
+                                <div class="batch-group">
+                                    <div class="batch-chip chip-d1">D1 M-II (T)</div>
+                                    <div class="batch-chip chip-d2">D2 SPORTS</div>
+                                </div>
+                            </td>
+                            <td data-day="4"><div><b>BEE (PU)</b></div><span class="instructor-tag">A206</span></td>
+                            <td data-day="5"><div><b>BCEM (KD)</b></div><span class="instructor-tag">A206</span></td>
+                            <td data-day="6" rowspan="2" class="bg-light fw-bold">VAP</td>
+                        </tr>
+
+                        <tr data-start="12:25" data-end="13:20">
+                            <td class="time-slot">12:25 - 01:20</td>
+                            <td data-day="1"><div><b>IKS (SJ)</b></div><span class="instructor-tag">A207</span></td>
+                            <td data-day="2"><div><b>Japanese (RS)</b></div><span class="instructor-tag">A206</span></td>
+                            <td data-day="3"></td>
+                            <td data-day="4"><div><b>Python (YK)</b></div><span class="instructor-tag">A206</span></td>
+                            <td data-day="5"><div><b>Library</b></div><span class="instructor-tag">Self Study</span></td>
+                        </tr>
+
+                        <tr><td colspan="7"><span class="break-badge">LUNCH BREAK</span></td></tr>
+
+                        <tr data-start="14:15" data-end="16:05">
+                            <td class="time-slot">02:15 - 04:05</td>
+                            <td data-day="1">
+                                <div class="batch-group">
+                                    <div class="batch-chip chip-d1">D1 PHY (AB)</div>
+                                    <div class="batch-chip chip-d2">D2 BEE (PU)</div>
+                                </div>
+                            </td>
+                            <td data-day="2">
+                                <div class="batch-group">
+                                    <div class="batch-chip chip-d1">D1 TEC (KD)</div>
+                                    <div class="batch-chip chip-d2">D2 M-II (T)</div>
+                                </div>
+                            </td>
+                            <td data-day="3">
+                                <div class="batch-group">
+                                    <div class="batch-chip chip-d1">D1 BEE (PU)</div>
+                                    <div class="batch-chip chip-d2">D2 Py (YK)</div>
+                                </div>
+                            </td>
+                            <td data-day="4">
+                                <div class="batch-group">
+                                    <div class="batch-chip chip-d1">D1 Py (YK)</div>
+                                    <div class="batch-chip chip-d2">D2 PHY (AB)</div>
+                                </div>
+                            </td>
+                            <td data-day="5"><div><b>Mentoring</b></div></td>
+                            <td data-day="6"><div class="text-primary fw-bold">Club Activity</div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateUI() {
+            const now = new Date();
+            const day = now.getDay(); 
+            const time = now.getHours() * 60 + now.getMinutes();
+            
+            document.getElementById('clock-text').innerText = now.toLocaleTimeString('en-IN', {hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit'});
+            document.getElementById('live-date').innerText = now.toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'});
+            
+            document.querySelectorAll('.active-day-column, .live-lecture').forEach(el => {
+                el.classList.remove('active-day-column', 'live-lecture');
+            });
+            
+            if (day < 1 || day > 6) return;
+
+            document.querySelectorAll(`[data-day="${day}"]`).forEach(cell => {
+                cell.classList.add('active-day-column');
+            });
+
+            document.querySelectorAll('tbody tr[data-start]').forEach(row => {
+                const [sH, sM] = row.getAttribute('data-start').split(':').map(Number);
+                const [eH, eM] = row.getAttribute('data-end').split(':').map(Number);
+                const start = sH * 60 + sM;
+                const end = eH * 60 + eM;
+
+                if (time >= start && time < end) {
+                    const targetCell = row.querySelector(`td[data-day="${day}"]`);
+                    if (targetCell && targetCell.innerText.trim() !== "") {
+                        targetCell.classList.add('live-lecture');
+                    }
+                }
+            });
+        }
+        setInterval(updateUI, 1000); 
+        updateUI();
+    </script>
+</body>
+</html>
